@@ -1,5 +1,5 @@
 #######################################
-# Syntax Coloring Map For Test
+# Syntax Coloring Map For x10
 #######################################
 
 #######################################
@@ -13,6 +13,9 @@ x10	KEYWORD1
 #######################################
 
 write	KEYWORD2
+read	KEYWORD2
+beginTransmission	KEYWORD2
+endTransmission	KEYWORD2
 
 ######################################
 # Instances (KEYWORD2)

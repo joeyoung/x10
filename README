@@ -1,3 +1,11 @@
+This is a fork of Igoe/x10 with addition of the read( ) capability.
+
+February 13, 2014  G. D. (Joe) Young <jyoung@islandnet.com> - initial version
+
+
+-----------------------------------------------------------------------------
+original README text follows:
+-----------
  X10 transmission library for Arduino version 0.4
  
 Copyright (c) 2007 by Tom Igoe (tom.igoe@gmail.com)

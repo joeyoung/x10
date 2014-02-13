@@ -51,6 +51,7 @@ class x10Class : public Stream
 	virtual void flush(void);
    // void onReceive( void (*)(int) );
    // void onRequest( void (*)(void) );
+	void waitzc( );
 
   private:
   	static uint8_t zeroCrossingPin;	// AC zero crossing pin
@@ -60,9 +61,12 @@ class x10Class : public Stream
   	static uint8_t transmitting;	// whether or not you're transmitting
  
   	// sends the individual bits of the commands:
-    void sendBits(byte cmd, byte numBits, byte isStartCode);	// does bit shifting of a command
+	byte receiveBits( byte numBits, byte isStartCode );    
+	unsigned int receiveCommand( );
+	void sendBits(byte cmd, byte numBits, byte isStartCode);	// does bit shifting of a command
     void sendCommand(byte houseCode, byte numberCode);			// sends a command
     void waitForZeroCross(int pin, int howManyTimes);		    // checks for AC zero crossing
+
 };
 
 extern x10Class x10;

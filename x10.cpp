@@ -20,6 +20,9 @@ published by the Free Software Foundation.
   The circuits can be found at 
  
 http://www.arduino.cc/en/Tutorial/x10
+
+  Feb 12, 2014
+  simple read( ) implementation - G. D. (Joe) Young <jyoung@islandnet.com>
  
  
  */
@@ -108,6 +111,7 @@ int x10Class::available(void)
 
 int x10Class::read(void)
 {
+	return( (int)receiveCommand( ) );
 }
 
 int x10Class::peek(void)
@@ -182,7 +186,77 @@ void x10Class::sendBits(byte cmd, byte numBits, byte isStartCode) {
 
 /*
 	TO DO: receiveBits and receiveCommand to parallel the above
+	Started Feb 6, 2014  G. D. (Joe) Young <jyoung@islandnet.com>
+	Feb 9/14 - received bits are complements of transmited; need to detect
+	    beginning of start sequence, then gather 4 bits and check validity
+	Feb 12/14 - implemented beginning detect with waitForZeroCross, read pin.
 */
+
+unsigned int x10Class::receiveCommand( ) {
+
+	unsigned int command = 0;
+
+	waitForZeroCross( zeroCrossingPin, 1 );	// sync with zero crossing
+	delayMicroseconds( BIT_LENGTH/2 );		// sample near bit centre
+	while( digitalRead( rxPin ) == HIGH ) {
+		waitForZeroCross( zeroCrossingPin, 1 );
+		delayMicroseconds( BIT_LENGTH/2 );		// sample near bit centre
+	 }
+	byte startCode = receiveBits( 3, true ); 	// exit wait after rx first start bit
+	if( startCode == 0b110 ) {		// good start
+		byte house = receiveBits( 4, false );
+		if( house < 0x80 ) {		// good house code
+			command = house<<5;
+		} else {
+			command = 0x8001;		// setup to return error
+			return command;
+		} // if good house code
+		byte number = receiveBits( 5, false );
+		if( number < 0x80 ) {		// good number code
+			command |= number;
+		} else {
+			command = 0x8002;
+			return command;			// error abort
+		} // if good number code
+	} else {						// bad start
+//		command = 0x8000;
+		command = startCode | 0x8000;
+	} // if good start code
+	return command;
+
+} /* receiveCommand( ) */
+
+
+byte x10Class::receiveBits( byte numBits, byte isStartCode ) {
+	byte input = 0;
+	byte thisBit;
+	for( byte i=0; i<numBits; i++ ) {
+		waitForZeroCross( zeroCrossingPin, 1 );
+		delayMicroseconds( BIT_LENGTH/2 );		// sample near bit centre
+		thisBit = (~digitalRead( rxPin )) & 0x01;
+		if( !isStartCode ) {				// check for complement
+			waitForZeroCross( zeroCrossingPin, 1 );
+			delayMicroseconds( BIT_LENGTH/2 );		// sample near bit centre
+			if( thisBit == digitalRead( rxPin ) & 0x01 ) {
+				input = (input<<1) | thisBit;
+			} else {
+				input |= 0x80;
+				return input;		// decoding error abort
+			} // if complement matches
+		} else { 
+			input = (input<<1) | thisBit;
+		} // if not startCode
+	} // for numBits
+
+	return input;
+
+} /* receiveBits( ) */
+
+
+void x10Class::waitzc( ) {
+	waitForZeroCross( zeroCrossingPin, 1 );
+} // waitzc() - access function for sketch waiting for zc (not needed)
+
 
 /*
   waits for a the zero crossing pin to cross zero
