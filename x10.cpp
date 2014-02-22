@@ -23,6 +23,8 @@ http://www.arduino.cc/en/Tutorial/x10
 
   Feb 12, 2014
   simple read( ) implementation - G. D. (Joe) Young <jyoung@islandnet.com>
+
+  Feb 18/14 - coordinate read( ) and write( ) sharing of waitForZeroCross( )
  
  
  */
@@ -31,12 +33,13 @@ http://www.arduino.cc/en/Tutorial/x10
 #include "x10.h"
 #include "x10constants.h"
 
-uint8_t x10Class::zeroCrossingPin = 2;	// AC zero crossing pin
-uint8_t x10Class::rxPin = 3;			// data in pin
-uint8_t x10Class::txPin = 4;			// data out pin
+uint8_t x10Class::zeroCrossingPin;// = 2;	// AC zero crossing pin
+uint8_t x10Class::rxPin;// = 3;			// data in pin
+uint8_t x10Class::txPin;// = 4;			// data out pin
 
 uint8_t x10Class::houseCode = 0;		// house code
 uint8_t x10Class::transmitting = 0;		// whether you're transmitting or not
+uint8_t x10Class::receiving = 0;		// true if receiving underway
 
 
 /*
@@ -56,12 +59,14 @@ void x10Class::begin(int _rxPin, int _txPin, int _zcPin)
   rxPin = _rxPin;        	
   zeroCrossingPin = _zcPin;			
   houseCode = 0;				  
-  transmitting = 0;			
+  transmitting = 0;
+  receiving = 0;			
 
   // Set I/O modes:
   pinMode(rxPin, INPUT);
   pinMode(txPin, OUTPUT);
   pinMode (zeroCrossingPin, INPUT);
+//  atzc = false;
 }
 
 void x10Class::beginTransmission(uint8_t data)
@@ -111,6 +116,8 @@ int x10Class::available(void)
 
 int x10Class::read(void)
 {
+	if( transmitting ) return( (int)WAIT_TX );	//back out if Tx underway
+	receiving = true;
 	return( (int)receiveCommand( ) );
 }
 
@@ -190,38 +197,47 @@ void x10Class::sendBits(byte cmd, byte numBits, byte isStartCode) {
 	Feb 9/14 - received bits are complements of transmited; need to detect
 	    beginning of start sequence, then gather 4 bits and check validity
 	Feb 12/14 - implemented beginning detect with waitForZeroCross, read pin.
+	Feb 19/14 - add non-blocking return if no start detected
 */
+
+#if 0 
+void x10Class::setatzc( bool _atzc ) {
+	atzc = _atzc;
+} // setatzc( )
+#endif
 
 unsigned int x10Class::receiveCommand( ) {
 
 	unsigned int command = 0;
+	byte bitsleft = 3;
 
 	waitForZeroCross( zeroCrossingPin, 1 );	// sync with zero crossing
 	delayMicroseconds( BIT_LENGTH/2 );		// sample near bit centre
-	while( digitalRead( rxPin ) == HIGH ) {
-		waitForZeroCross( zeroCrossingPin, 1 );
-		delayMicroseconds( BIT_LENGTH/2 );		// sample near bit centre
-	 }
-	byte startCode = receiveBits( 3, true ); 	// exit wait after rx first start bit
-	if( startCode == 0b110 ) {		// good start
-		byte house = receiveBits( 4, false );
-		if( house < 0x80 ) {		// good house code
-			command = house<<5;
-		} else {
-			command = 0x8001;		// setup to return error
-			return command;
-		} // if good house code
-		byte number = receiveBits( 5, false );
-		if( number < 0x80 ) {		// good number code
-			command |= number;
-		} else {
-			command = 0x8002;
-			return command;			// error abort
-		} // if good number code
-	} else {						// bad start
+	if( digitalRead( rxPin ) == HIGH ) {
+		receiving = false;
+		return( NO_CMD );					// give tx a chance if no start bit
+	} else {
+		byte startCode = receiveBits( bitsleft, true ); 	// exit wait after rx first start bit
+		if( startCode == 0b110 ) {		// good start
+			byte house = receiveBits( 4, false );
+			if( house < 0x80 ) {		// good house code
+				command = house<<5;
+			} else {
+				command = 0x8001;		// setup to return error
+				return command;
+			} // if good house code
+			byte number = receiveBits( 5, false );
+			if( number < 0x80 ) {		// good number code
+				command |= number;
+			} else {
+				command = 0x8002;
+				return command;			// error abort
+			} // if good number code
+		} else {						// bad start
 //		command = 0x8000;
-		command = startCode | 0x8000;
-	} // if good start code
+			command = startCode | 0x8000;
+		} // if good start code
+	} // if no start bit found on entry
 	return command;
 
 } /* receiveCommand( ) */
@@ -253,10 +269,11 @@ byte x10Class::receiveBits( byte numBits, byte isStartCode ) {
 } /* receiveBits( ) */
 
 
+#if 0
 void x10Class::waitzc( ) {
 	waitForZeroCross( zeroCrossingPin, 1 );
 } // waitzc() - access function for sketch waiting for zc (not needed)
-
+#endif
 
 /*
   waits for a the zero crossing pin to cross zero

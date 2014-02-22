@@ -10,11 +10,16 @@ published by the Free Software Foundation.
 
 */
 
+#ifndef x10const_h
+#define x10const_h
 
 #define HIGH 0x1
 #define LOW  0x0
 #define BIT_DELAY 1778    	// 1778 us between bit repeats in a half-cycle
 #define BIT_LENGTH 800		// each bit is slightly less than 1ms long
+
+#define WAIT_TX 0x800F		// error cmd return if read( ) called during TX
+#define NO_CMD 0x800E		// error cmd return if read( ) finds no start bit
 
 #define	A	0b0110
 #define	B	0b1110	
@@ -65,3 +70,8 @@ published by the Free Software Foundation.
 #define STATUS_ON			0b11011
 #define STATUS_OFF			0b11101
 #define STATUS_REQUEST		0b11111
+
+
+#endif
+
+

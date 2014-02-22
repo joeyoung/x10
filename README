@@ -1,6 +1,9 @@
-This is a fork of Igoe/x10 with addition of the read( ) capability.
+This is a fork of TIgoe/x10 with addition of the read( ) capability.
 
 February 13, 2014  G. D. (Joe) Young <jyoung@islandnet.com> - initial version
+
+February 21, 2014 - added non-blocking read( ), permitting both read, write in
+    loop()--see top of loop( ) in x10clock2 example
 
 
 -----------------------------------------------------------------------------

@@ -16,6 +16,10 @@ published by the Free Software Foundation.
 
 	Sends X10 commands.
 
+Elementary receive function (blocking) added Feb 12, 2014. G. D. (Joe) Young
+
+Share waitForZeroCross( ), non-blocking read - Feb 18/14
+
 */
 
 // ensure this library description is only included once
@@ -25,6 +29,7 @@ published by the Free Software Foundation.
 // include types & constants of core API (for Arduino after 0022)
 #include <Arduino.h>
 #include "x10constants.h"
+
 
 // library interface description
 class x10Class : public Stream
@@ -51,7 +56,6 @@ class x10Class : public Stream
 	virtual void flush(void);
    // void onReceive( void (*)(int) );
    // void onRequest( void (*)(void) );
-	void waitzc( );
 
   private:
   	static uint8_t zeroCrossingPin;	// AC zero crossing pin
@@ -59,6 +63,7 @@ class x10Class : public Stream
   	static uint8_t rxPin;			// data in pin
   	static uint8_t houseCode;		// house code
   	static uint8_t transmitting;	// whether or not you're transmitting
+	static uint8_t receiving;		// true if receiving underway
  
   	// sends the individual bits of the commands:
 	byte receiveBits( byte numBits, byte isStartCode );    

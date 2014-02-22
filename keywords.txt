@@ -1,5 +1,5 @@
 #######################################
-# Syntax Coloring Map For x10
+# Syntax Coloring Map For Test
 #######################################
 
 #######################################
@@ -14,8 +14,6 @@ x10	KEYWORD1
 
 write	KEYWORD2
 read	KEYWORD2
-beginTransmission	KEYWORD2
-endTransmission	KEYWORD2
 
 ######################################
 # Instances (KEYWORD2)
@@ -25,6 +23,9 @@ endTransmission	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
+NO_CMD	LITERAL1
+WAIT_TX LITERAL1
+
 A	LITERAL1
 B	LITERAL1	
 C	LITERAL1
