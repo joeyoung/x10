@@ -1,0 +1,53 @@
+x10 (receive) development notes
+
+February 21, 2014  G. D. (Joe) Young <jyoung@islandnet.com>
+
+* The first elementary x10 read( ) capability was added to the original x10
+  library developed by Tom Igoe up to around 2007, and posted to gitHub
+  Feb 13/14.
+
+* The read( ) or write( ) functions in the first release each blocked the 
+  arduino loop for the duration of their action--because all x10 operations
+  are sync'd to the ac power line zero crossings via the waitForZeroCross( ).
+
+* Some scenarios that might be implemented to permit 'sharing' the zero crossing
+  detection timing:
+	- interleave the receiving during transmitting by starting tx bit, wait for
+      1/2 bit time, check for receive bit, wait other 1/2 bit time, turn off tx.
+      This would require saving the received bits for analysis after 
+      transmitting was finished.
+	- use interrupt service on the zero crossing pin to interrupt out of loop( )
+	  and handle whatever needs doing - receive, transmit, neither, or both.
+	- within loop( ) detect the zero crossing, check for any receive start, and
+	  if start detected, go to existing read( ) but signal that the first bit 
+	  (always 1) already detected. This works and was implemented.
+	- modify the read( ) function to check the 'transmitting' flag or/and check
+	  at zero crossing for first bit and if transmitting or no bit return to
+	  continue loop( ) processing. This scenario is the second posting to github.
+
+	  So, to use the library for both transmitting and receiving in the same
+	  loop( ), issue read( ), test return for NO_CMD, if NO_CMD then check to
+	  see if anything to be transmitted; if nothing to send carry on with rest
+	  of loop( ), repeat. If something to send, issue beginTransmission( house ),
+	  then write( unit ), write( action ), finish with endTransmission( );
+
+
+* The coordination of the transmit and receive could be more 'symmetric' if the
+  write( ) similarly checked the 'receiving' flag that's been added. However,
+  it's noted that the beginning of a transmission, write, end transmission
+  sequence is not interruptible and cannot begin until after it's been 
+  determined at the latest zero crossing that no reception is underway. Also,
+  since receiving won't start until the transmit sequence is finished, the
+  read( ) check of the transmitting flag will never find it set. The cross-
+  checking would be appropriate if the read( ) and write( ) were driven by
+  interrupts.
+
+* The x10 application note suggests that the TW523 could detect collisions 
+  between a transmission and another signal by monitoring the receive line while
+  transmitting and if they are not the same, a collision is indicated. However,
+  the document also says that the received signal is delayed until the second
+  transmission which seems contradictory. I have not looked into this behaviour.
+
+
+
+
